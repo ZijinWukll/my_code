@@ -14,8 +14,16 @@ try:
 except pygame.error:
     print("背景音乐文件未找到，跳过播放。")
 
-# 设置窗口大小（较大界面框）
-WIDTH, HEIGHT = 1400, 900
+
+# 获取屏幕分辨率并设置窗口高度为90%，宽度为原比例1.2倍
+infoObject = pygame.display.Info()
+SCREEN_WIDTH, SCREEN_HEIGHT = infoObject.current_w, infoObject.current_h
+RATIO = 1400 / 900  # 原始宽高比
+HEIGHT = int(SCREEN_HEIGHT * 0.9)
+WIDTH = int(HEIGHT * RATIO * 1.2)
+if WIDTH > int(SCREEN_WIDTH * 0.98):
+    WIDTH = int(SCREEN_WIDTH * 0.98)
+    HEIGHT = int(WIDTH / (RATIO * 1.2))
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("生日祝福游戏")
 
@@ -38,39 +46,30 @@ COLORS = [
     (255, 105, 180),  # 热粉
 ]
 
-# 字体（使用系统中文字体，更粗）
-try:
-    font_large = pygame.font.SysFont("microsoftyahei", 180, bold=True)  # 微软雅黑，更大更粗
-    font_medium = pygame.font.SysFont("microsoftyahei", 100, bold=True)
-    font_small = pygame.font.SysFont("microsoftyahei", 60, bold=True)
-    font_tiny = pygame.font.SysFont("microsoftyahei", 40, bold=True)
-except:
+# 动态字体大小，基于窗口高度
+font_scale = HEIGHT / 900
+def get_font(name, size, bold=True):
     try:
-        font_large = pygame.font.SysFont("simsun", 180, bold=True)  # 宋体
-        font_medium = pygame.font.SysFont("simsun", 100, bold=True)
-        font_small = pygame.font.SysFont("simsun", 60, bold=True)
-        font_tiny = pygame.font.SysFont("simsun", 40, bold=True)
+        return pygame.font.SysFont(name, int(size * font_scale), bold=bold)
     except:
-        font_large = pygame.font.SysFont(None, 180, bold=True)
-        font_medium = pygame.font.SysFont(None, 100, bold=True)
-        font_small = pygame.font.SysFont(None, 60, bold=True)
-        font_tiny = pygame.font.SysFont(None, 40, bold=True)
+        return pygame.font.SysFont(None, int(size * font_scale), bold=bold)
+
+font_large = get_font("microsoftyahei", 160)
+font_medium = get_font("microsoftyahei", 110)
+font_small = get_font("microsoftyahei", 60)
+font_tiny = get_font("microsoftyahei", 40)
 
 # 祝福语列表（扩展）
 wishes = [
-    "生日快乐!",
-    "祝你生日快乐！",
-    "生日快乐！",
+    "邓林杉生日快乐!",
+    "祝dls生日快乐!",
+    "祝邓林杉生日快乐!",
     "天天开心！",
     "学习进步！",
     "梦想成真！",
     "永远年轻，永远快乐！",
     "前程似锦！",
     "生日快乐！",
-    
-    
-    
-    
     "天天好运！"
     
     
@@ -101,13 +100,12 @@ class FallingWish:
         self.rotation_speed = 0  # 不旋转
         self.scale = 1.0
         self.scale_speed = scale_speed
+        # 动态字体，基于窗口缩放
+        font_size = int(40 * self.size * font_scale)
         try:
-            self.font = pygame.font.SysFont("microsoftyahei", int(40 * self.size), bold=True)
+            self.font = pygame.font.SysFont("microsoftyahei", font_size, bold=True)
         except:
-            try:
-                self.font = pygame.font.SysFont("simsun", int(40 * self.size), bold=True)
-            except:
-                self.font = pygame.font.SysFont(None, int(40 * self.size), bold=True)
+            self.font = pygame.font.SysFont(None, font_size, bold=True)
 
     def update(self):
         self.y += self.speed
@@ -207,7 +205,7 @@ class Cake:
         self.color = color
         self.size = size
         self.scale = 1.0
-        self.scale_speed = random.uniform(0.01, 0.05)
+        self.scale_speed = random.uniform(0.003, 0.012)
         try:
             self.image = pygame.image.load("python/cake1.png").convert_alpha()
             self.use_image = True
@@ -217,26 +215,30 @@ class Cake:
     def update(self):
         self.y += self.speed
         self.scale += self.scale_speed
-        if self.scale > 1.5 or self.scale < 0.8:
+        if self.scale > 1.30 or self.scale < 0.85:
             self.scale_speed = -self.scale_speed
         if self.y > HEIGHT + 100:
             self.y = -100
             self.x = random.randint(0, WIDTH - 100)
 
     def draw(self, screen):
+        base = HEIGHT / 900  # 元素基准缩放
         if self.use_image:
-            scaled_image = pygame.transform.scale(self.image, (int(self.image.get_width() * self.scale * self.size * 0.27), int(self.image.get_height() * self.scale * self.size * 0.27)))
+            scaled_image = pygame.transform.scale(
+                self.image,
+                (int(self.image.get_width() * self.scale * self.size * 0.27 * base),
+                 int(self.image.get_height() * self.scale * self.size * 0.27 * base))
+            )
             screen.blit(scaled_image, (self.x, self.y))
         else:
-            # 简单蛋糕形状
-            width = int(100 * self.scale * self.size)
-            height = int(60 * self.scale * self.size)
+            width = int(100 * self.scale * self.size * base)
+            height = int(60 * self.scale * self.size * base)
             pygame.draw.rect(screen, self.color, (self.x, self.y, width, height))
-            pygame.draw.rect(screen, (255, 255, 255), (self.x, self.y - 20 * self.scale * self.size, width, 20 * self.scale * self.size))  # 奶油
+            pygame.draw.rect(screen, (255, 255, 255), (self.x, self.y - 20 * self.scale * self.size * base, width, 20 * self.scale * self.size * base))
 
 # 圣诞树类（使用图片或图形）
 class ChristmasTree:
-    def __init__(self, x, y, speed, color, size):
+    def __init__(self, x, y, speed, color, size, only23=False):
         self.x = x
         self.y = y
         self.speed = speed
@@ -244,8 +246,14 @@ class ChristmasTree:
         self.size = size
         self.rotation = 0
         self.rotation_speed = 0  # 不旋转
+        # 只从tree2和tree3中选
+        if only23:
+            tree_choices = ["tree2.png", "tree3.png"]
+        else:
+            tree_choices = ["tree2.png", "tree3.png"]  # tree1不再参与下落动画
+        self.tree_name = random.choice(tree_choices)
         try:
-            self.image = pygame.image.load("python/" + random.choice(["tree1.png", "tree2.png"])).convert_alpha()
+            self.image = pygame.image.load(f"python/{self.tree_name}").convert_alpha()
             self.use_image = True
         except FileNotFoundError:
             self.use_image = False
@@ -258,23 +266,36 @@ class ChristmasTree:
             self.x = random.randint(0, WIDTH - 100)
 
     def draw(self, screen):
+        base = HEIGHT / 900
         if self.use_image:
+            # tree3缩小3倍
+            if hasattr(self, "tree_name") and self.tree_name == "tree3.png":
+                scale_factor = (0.16 / 3) * base
+                x_stretch = 1.0
+            else:
+                scale_factor = 0.16 * base
+                x_stretch = 1.0
             rotated_image = pygame.transform.rotate(self.image, self.rotation)
-            scaled_image = pygame.transform.scale(rotated_image, (int(rotated_image.get_width() * self.size * 0.16), int(rotated_image.get_height() * self.size * 0.16)))
+            scaled_image = pygame.transform.scale(
+                rotated_image,
+                (int(rotated_image.get_width() * self.size * scale_factor * x_stretch),
+                 int(rotated_image.get_height() * self.size * scale_factor))
+            )
             screen.blit(scaled_image, (self.x, self.y))
         else:
             # 简单树形
             points = [
-                (self.x, self.y + 100 * self.size),
-                (self.x - 50 * self.size, self.y + 100 * self.size),
-                (self.x - 25 * self.size, self.y + 50 * self.size),
-                (self.x - 50 * self.size, self.y + 50 * self.size),
+                (self.x, self.y + 100 * self.size * base),
+                (self.x - 50 * self.size * base, self.y + 100 * self.size * base),
+                (self.x - 25 * self.size * base, self.y + 50 * self.size * base),
+                (self.x - 50 * self.size * base, self.y + 50 * self.size * base),
                 (self.x, self.y),
-                (self.x + 50 * self.size, self.y + 50 * self.size),
-                (self.x + 25 * self.size, self.y + 50 * self.size),
-                (self.x + 50 * self.size, self.y + 100 * self.size),
+                (self.x + 50 * self.size * base, self.y + 50 * self.size * base),
+                (self.x + 25 * self.size * base, self.y + 50 * self.size * base),
+                (self.x + 50 * self.size * base, self.y + 100 * self.size * base),
             ]
             pygame.draw.polygon(screen, self.color, points)
+
 
 # 初始化对象
 background = DynamicBackground()
@@ -283,6 +304,13 @@ stars = []
 snowflakes = []
 cakes = []
 trees = []
+
+# 固定顶部tree1图片
+try:
+    tree1_image = pygame.image.load("python/tree1.png").convert_alpha()
+    tree1_show = True
+except FileNotFoundError:
+    tree1_show = False
 
 # 创建祝福语
 for i in range(10):
@@ -325,7 +353,7 @@ for i in range(5):
 for i in range(5):
     x = random.randint(0, WIDTH - 100)
     y = random.randint(-HEIGHT, 0)
-    speed = random.uniform(0.5, 2)
+    speed = random.uniform(1.2, 3.5)  # 下落速度增快
     color = (0, 128, 0)
     size = random.uniform(0.8, 1.5)
     trees.append(ChristmasTree(x, y, speed, color, size))
@@ -338,9 +366,45 @@ main_color_timer = 0
 main_color = random.choice(COLORS)
 clock = pygame.time.Clock()
 
+
 while running:
     background.update()
     background.draw(screen)
+
+    # 固定tree1图片最顶端居中
+    if tree1_show:
+        base = HEIGHT / 900
+        scale_factor = 1.0 * base
+        x_stretch = 2.0  # 横向拉伸2倍
+        img = pygame.transform.scale(
+            tree1_image,
+            (int(tree1_image.get_width() * scale_factor * x_stretch),
+             int(tree1_image.get_height() * scale_factor))
+        )
+        x_pos = WIDTH // 2 - img.get_width() // 2
+        y_pos = 0
+        screen.blit(img, (x_pos, y_pos))
+
+    # 更新和绘制元素
+    for wish in falling_wishes:
+        wish.update()
+        wish.draw(screen)
+
+    for star in stars:
+        star.update()
+        star.draw(screen)
+
+    for snowflake in snowflakes:
+        snowflake.update()
+        snowflake.draw(screen)
+
+    for cake in cakes:
+        cake.update()
+        cake.draw(screen)
+
+    for tree in trees:
+        tree.update()
+        tree.draw(screen)
 
     # 更新主祝福语颜色
     main_color_timer += 1
