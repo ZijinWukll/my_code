@@ -13,25 +13,39 @@
 
     <main class="app" role="main">
         <header class="header">
-            <h1 class="title">24 点</h1>
-            <p class="subtitle">用 + − × ÷ 和括号，把四个数算成 24</p>
+            <h1 class="title">24 点小游戏</h1>
+            <p class="subtitle">用 + − × ÷ 和括号( )，把四个数算成 24</p>
         </header>
 
         <section class="panel" aria-label="游戏区域">
             <div class="top-row">
                 <div class="numbers" id="numbersArea" aria-label="当前数字"></div>
-                <div class="actions" aria-label="操作按钮">
-                    <button class="btn primary" id="newBtn" type="button">换一组</button>
-                    <button class="btn" id="hintBtn" type="button">提示</button>
-                </div>
+            </div>
+
+            <div class="keypad" aria-label="运算符键盘">
+                <button class="key btn-key" type="button" data-token="+">+</button>
+                <button class="key btn-key" type="button" data-token="−">−</button>
+                <button class="key btn-key" type="button" data-token="×">×</button>
+                <button class="key btn-key" type="button" data-token="÷">÷</button>
+                <button class="key btn-key" type="button" data-token="(">(</button>
+                <button class="key btn-key" type="button" data-token=")">)</button>
             </div>
 
             <div class="input-row">
                 <label class="sr-only" for="exprInput">输入表达式</label>
-                <input id="exprInput" class="input" type="text" inputmode="text" autocomplete="off" spellcheck="false"
-                    placeholder="例如：(8-4)×(7-1)" />
-                <button class="btn primary" id="checkBtn" type="button">提交</button>
-                <button class="btn ghost" id="clearBtn" type="button">清空</button>
+                <input id="exprInput" class="input" type="text" inputmode="none" autocomplete="off" spellcheck="false"
+                    placeholder="点击数字和符号输入" readonly />
+                <button class="btn" id="delBtn" type="button" aria-label="删除一个输入">删除</button>
+                <button class="btn ghost" id="clearBtn" type="button" aria-label="清空输入">清空</button>
+            </div>
+
+            <div class="submit-row" aria-label="提交区域">
+                <button class="btn primary submit" id="checkBtn" type="button">确定</button>
+            </div>
+
+            <div class="minor-actions" aria-label="辅助按钮">
+                <button class="btn minor" id="newBtn" type="button">换一组</button>
+                <button class="btn minor" id="hintBtn" type="button" aria-pressed="false">提示答案</button>
             </div>
 
             <div class="status" aria-live="polite" aria-atomic="true">
@@ -43,13 +57,13 @@
             </div>
 
             <div class="tips">
-                <div class="tip">支持括号与小数；运算符：+ - * /</div>
-                <div class="tip">按 Enter 可直接提交</div>
+                <div class="tip">用鼠标点击数字与运算符按键即可</div>
+                <div class="tip">运算符支持：+ − × ÷ ( )</div>
             </div>
         </section>
 
         <footer class="footer">
-            <span>纯前端静态版 · 无需后端</span>
+            <span>作者：ZijinWukll（GitHub同号）& ChatGPT 2025.12.16</span>
         </footer>
     </main>
 

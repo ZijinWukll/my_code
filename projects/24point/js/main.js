@@ -245,11 +245,38 @@
         const numbersArea = $("numbersArea");
         numbersArea.innerHTML = "";
         for (const n of nums) {
-            const card = document.createElement("div");
-            card.className = "num";
-            card.innerHTML = `<div class="num-value">${n}</div>`;
-            numbersArea.appendChild(card);
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "num";
+            btn.setAttribute("data-num", String(n));
+            btn.setAttribute("aria-label", `数字 ${n}`);
+            btn.innerHTML = `<div class="num-value">${n}</div>`;
+            numbersArea.appendChild(btn);
         }
+    }
+
+    function appendToken(token) {
+        const input = $("exprInput");
+        input.value = input.value + token;
+        hideHint();
+        setMessage("继续输入，或点击“确定”验证答案", undefined);
+    }
+
+    function deleteLastToken() {
+        const input = $("exprInput");
+        let s = input.value;
+        if (!s) return;
+
+        // 末尾是数字：删除一整个数字 token（1~13，因此可能两位数）
+        if (/\d$/.test(s)) {
+            s = s.replace(/\d+$/, "");
+        } else {
+            // 运算符/括号：删一个字符（含 × ÷ −）
+            s = s.slice(0, -1);
+        }
+        input.value = s;
+        hideHint();
+        setMessage("已删除一个输入", undefined);
     }
 
     function setMessage(text, kind) {
@@ -264,18 +291,37 @@
         const hintArea = $("hintArea");
         hintArea.hidden = true;
         $("hintExpr").textContent = "";
+
+        const hintBtn = $("hintBtn");
+        hintBtn.classList.remove("is-on");
+        hintBtn.setAttribute("aria-pressed", "false");
     }
 
     function showHint() {
         const hintArea = $("hintArea");
         const hintExpr = $("hintExpr");
         if (!currentSolution) {
-            hintExpr.textContent = "这组数字好像没有解（理论上不该出现）";
+            hintExpr.textContent = "呃这组数字好像没有解（理论上不该出现）";
             hintArea.hidden = false;
             return;
         }
         hintExpr.textContent = formatExprForUser(currentSolution);
         hintArea.hidden = false;
+
+        const hintBtn = $("hintBtn");
+        hintBtn.classList.add("is-on");
+        hintBtn.setAttribute("aria-pressed", "true");
+    }
+
+    function toggleHint() {
+        const hintArea = $("hintArea");
+        if (hintArea.hidden) {
+            showHint();
+            setMessage("已显示一种提示答案（仅供参考）", undefined);
+        } else {
+            hideHint();
+            setMessage("已隐藏提示答案", undefined);
+        }
     }
 
     function newGame() {
@@ -297,14 +343,14 @@
             currentNumbers = [1, 1, 1, 1];
             currentSolution = null;
             renderNumbers(currentNumbers);
-            setMessage("生成失败：请再点一次“换一组”", "bad");
+            setMessage("生成失败：请点击“换一组”", "bad");
             return;
         }
 
         currentNumbers = nums;
         currentSolution = sol;
         renderNumbers(currentNumbers);
-        setMessage("请输入表达式并提交（目标：24）", undefined);
+        setMessage("请输入表达式并点击确定（目标：24 ^_^）", undefined);
     }
 
     function checkAnswer() {
@@ -317,9 +363,9 @@
         try {
             const value = evalExpression(input);
             if (Math.abs(value - TARGET) < EPS) {
-                setMessage(`正确！结果 = ${value}`, "ok");
+                setMessage(`正确！结果 = ${value},真是太聪明啦！`, "ok");
             } else {
-                setMessage(`还差一点：结果 = ${value}，不是 24。`, "bad");
+                setMessage(`还差一点点：结果 = ${value}，不是 24，加油再试试！`, "bad");
             }
         } catch (err) {
             setMessage(err instanceof Error ? err.message : "表达式解析失败", "bad");
@@ -327,19 +373,47 @@
     }
 
     function bindEvents() {
-        $("newBtn").addEventListener("click", () => newGame());
-        $("hintBtn").addEventListener("click", () => {
-            showHint();
-            setMessage("已显示提示答案（仅供参考）", undefined);
+        // 数字点按输入
+        $("numbersArea").addEventListener("click", (e) => {
+            const target = /** @type {HTMLElement} */ (e.target);
+            const btn = target.closest("button[data-num]");
+            if (!btn) return;
+            const num = btn.getAttribute("data-num");
+            if (!num) return;
+            appendToken(num);
         });
-        $("checkBtn").addEventListener("click", () => checkAnswer());
+
+        // 运算符点按输入（来自 HTML 的 data-token）
+        const keypad = document.querySelector(".keypad");
+        if (keypad) {
+            keypad.addEventListener("click", (e) => {
+                const target = /** @type {HTMLElement} */ (e.target);
+                const btn = target.closest("button[data-token]");
+                if (!btn) return;
+                const token = btn.getAttribute("data-token");
+                if (!token) return;
+                appendToken(token);
+            });
+        }
+
+        // 只允许点按输入：输入框不接受键盘编辑
+        const input = $("exprInput");
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Tab" || e.key === "Escape") return;
+            e.preventDefault();
+        });
+
+        $("delBtn").addEventListener("click", () => deleteLastToken());
         $("clearBtn").addEventListener("click", () => {
             $("exprInput").value = "";
-            setMessage("已清空输入。", undefined);
+            hideHint();
+            setMessage("已清空输入", undefined);
         });
-        $("exprInput").addEventListener("keydown", (e) => {
-            if (e.key === "Enter") checkAnswer();
-        });
+
+        $("checkBtn").addEventListener("click", () => checkAnswer());
+
+        $("newBtn").addEventListener("click", () => newGame());
+        $("hintBtn").addEventListener("click", () => toggleHint());
     }
 
     document.addEventListener("DOMContentLoaded", () => {
