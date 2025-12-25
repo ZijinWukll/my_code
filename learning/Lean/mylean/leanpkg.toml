@@ -1,5 +1,0 @@
-[package]
-name = "mylean"
-version = "0.1"
-lean_version = "nightly-2024-01-01"
-path = "src"
